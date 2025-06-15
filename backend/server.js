@@ -32,10 +32,20 @@ app.use('/api/messages', messageRoutes);
 
 // Health check
 app.get('/api/health', (req, res) => {
-  res.json({ 
+  res.status(200).json({ 
     status: 'OK', 
     message: 'TellYouSomeday API is running',
-    timestamp: new Date().toISOString()
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV || 'development'
+  });
+});
+
+// Root health check (backup)
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    message: 'TellYouSomeday API is running' 
   });
 });
 
@@ -62,6 +72,12 @@ app.use('*', (req, res) => {
 app.listen(PORT, () => {
   console.log(`🚀 TellYouSomeday API running on port ${PORT}`);
   console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🏥 Health check available at: /api/health`);
+  
+  // Give the server a moment to fully initialize
+  setTimeout(() => {
+    console.log(`✅ Server fully initialized and ready for health checks`);
+  }, 2000);
 });
 
 export default app;
