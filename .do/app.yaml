@@ -22,10 +22,12 @@ services:
   - key: MONGODB_URI
     value: mongodb+srv://tellyousomeday-admin:Dkk%40320909@tellyousomeday-cluster.8j0bf4b.mongodb.net/tellyousomeday?retryWrites=true&w=majority&appName=tellyousomeday-cluster
   - key: JWT_SECRET
-    value: tellyousomeday-super-secret-jwt-key-production-2025  - key: FRONTEND_URL
+    value: tellyousomeday-super-secret-jwt-key-production-2025
+  - key: FRONTEND_URL
     value: https://tellyousomeday-5r77f.ondigitalocean.app
   routes:
   - path: /api
+    preserve_path_prefix: true
 - name: frontend
   source_dir: /
   github:
@@ -38,10 +40,12 @@ services:
   instance_size_slug: basic-xxs
   http_port: 8080
   health_check:
-    http_path: /  envs:
+    http_path: /
+  envs:
   - key: PORT
     value: "8080"
   - key: VITE_API_URL
     value: https://tellyousomeday-5r77f.ondigitalocean.app/api
   routes:
   - path: /
+    preserve_path_prefix: true

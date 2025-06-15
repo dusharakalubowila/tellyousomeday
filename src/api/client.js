@@ -1,14 +1,28 @@
 // API Configuration
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || 
+                     (window.location.origin.includes('ondigitalocean.app') 
+                      ? window.location.origin + '/api' 
+                      : 'http://localhost:5000/api');
+
+console.log('🔧 API Configuration:', {
+  VITE_API_URL: import.meta.env.VITE_API_URL,
+  API_BASE_URL: API_BASE_URL,
+  origin: window.location.origin
+});
 
 // API Client
 class APIClient {
   constructor(baseURL = API_BASE_URL) {
     this.baseURL = baseURL;
   }
-
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
+    
+    console.log('🌐 API Request:', {
+      url,
+      method: options.method || 'GET',
+      baseURL: this.baseURL
+    });
     
     const config = {
       headers: {
@@ -24,15 +38,29 @@ class APIClient {
 
     try {
       const response = await fetch(url, config);
+      
+      console.log('📡 API Response:', {
+        status: response.status,
+        statusText: response.statusText,
+        url: response.url
+      });
+      
       const data = await response.json();
 
       if (!response.ok) {
+        console.error('❌ API Error Response:', data);
         throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
 
+      console.log('✅ API Success:', data);
       return data;
     } catch (error) {
-      console.error('API request failed:', error);
+      console.error('💥 API request failed:', {
+        error: error.message,
+        url,
+        endpoint,
+        baseURL: this.baseURL
+      });
       throw error;
     }
   }
