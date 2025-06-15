@@ -4,7 +4,7 @@ services:
 - name: backend
   source_dir: /backend
   github:
-    repo: your-username/tellyousomeday
+    repo: dusharakalubowila/tellyousomeday
     branch: main
   run_command: npm start
   environment_slug: node-js
@@ -25,7 +25,7 @@ services:
 - name: frontend
   source_dir: /
   github:
-    repo: your-username/tellyousomeday
+    repo: dusharakalubowila/tellyousomeday
     branch: main
   build_command: npm install && npm run build
   run_command: npx serve -s dist -l 3000
