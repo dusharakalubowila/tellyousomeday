@@ -1,18 +1,27 @@
 // API Configuration
-// Try to use backend service directly if routing doesn't work
 const getApiUrl = () => {
-  // In production, if we're on DigitalOcean, try to use the backend service directly
+  // Check environment variable first
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  
+  // In production, try to detect the backend URL
   if (window.location.hostname.includes('ondigitalocean.app')) {
-    // Try different potential backend URLs
+    // Try common patterns for separate backend app
     const possibleUrls = [
-      'https://tellyousomeday-5r77f.ondigitalocean.app/api',
-      'https://backend-tellyousomeday-5r77f.ondigitalocean.app/api',
-      'https://tellyousomeday-backend-5r77f.ondigitalocean.app/api'
+      'https://tellyousomeday-api-5r77f.ondigitalocean.app/api',
+      'https://tellyousomeday-backend-5r77f.ondigitalocean.app/api',
+      'https://api-tellyousomeday-5r77f.ondigitalocean.app/api',
+      // Fallback to same domain with /api path
+      window.location.origin + '/api'
     ];
-    // For now, let's try the main one and see what happens
+    
+    // For now, try the separate app URL first
     return possibleUrls[0];
   }
-  return import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+  
+  // Development fallback
+  return 'http://localhost:5000/api';
 };
 
 const API_BASE_URL = getApiUrl();
@@ -21,7 +30,8 @@ console.log('🔧 API Configuration:', {
   VITE_API_URL: import.meta.env.VITE_API_URL,
   API_BASE_URL: API_BASE_URL,
   origin: window.location.origin,
-  hostname: window.location.hostname
+  hostname: window.location.hostname,
+  mode: import.meta.env.MODE
 });
 
 // API Client

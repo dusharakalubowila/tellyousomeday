@@ -1,32 +1,5 @@
-# DigitalOcean App Platform Configuration for TellYouSomeday
+# DigitalOcean App Platform Configuration for TellYouSomeday Frontend
 name: tellyousomeday
-services:
-- name: api
-  source_dir: /backend
-  github:
-    repo: dusharakalubowila/tellyousomeday
-    branch: main
-  build_command: npm ci
-  run_command: node server.js
-  environment_slug: node-js
-  instance_count: 1
-  instance_size_slug: basic-xxs
-  http_port: 8080
-  health_check:
-    http_path: /api/health
-  envs:
-  - key: NODE_ENV
-    value: production
-  - key: PORT
-    value: "8080"
-  - key: MONGODB_URI
-    value: mongodb+srv://tellyousomeday-admin:Dkk%40320909@tellyousomeday-cluster.8j0bf4b.mongodb.net/tellyousomeday?retryWrites=true&w=majority&appName=tellyousomeday-cluster
-  - key: JWT_SECRET
-    value: tellyousomeday-super-secret-jwt-key-production-2025
-  - key: FRONTEND_URL
-    value: https://tellyousomeday-5r77f.ondigitalocean.app
-  routes:
-  - path: /api
 static_sites:
 - name: frontend
   source_dir: /
@@ -39,6 +12,4 @@ static_sites:
   error_document: index.html
   envs:
   - key: VITE_API_URL
-    value: https://tellyousomeday-5r77f.ondigitalocean.app/api
-  routes:
-  - path: /
+    value: https://tellyousomeday-api-xxxxx.ondigitalocean.app/api
