@@ -1,37 +1,45 @@
-// API Configuration
+// API Configuration with multiple fallbacks
 const getApiUrl = () => {
   // Check environment variable first
   if (import.meta.env.VITE_API_URL) {
+    console.log('📍 Using VITE_API_URL:', import.meta.env.VITE_API_URL);
     return import.meta.env.VITE_API_URL;
   }
   
-  // In production, try to detect the backend URL
-  if (window.location.hostname.includes('ondigitalocean.app')) {
-    // Try common patterns for separate backend app
-    const possibleUrls = [
-      'https://tellyousomeday-api-5r77f.ondigitalocean.app/api',
-      'https://tellyousomeday-backend-5r77f.ondigitalocean.app/api',
-      'https://api-tellyousomeday-5r77f.ondigitalocean.app/api',
-      // Fallback to same domain with /api path
-      window.location.origin + '/api'
-    ];
-    
-    // For now, try the separate app URL first
-    return possibleUrls[0];
+  // Development
+  if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    return 'http://localhost:5000/api';
   }
   
-  // Development fallback
+  // Production - try multiple potential URLs
+  if (window.location.hostname.includes('ondigitalocean.app')) {
+    const currentDomain = window.location.hostname;
+    const potentialUrls = [
+      // Try different backend app naming patterns
+      `https://tellyousomeday-backend-${currentDomain.split('-').pop()}/api`,
+      `https://api-${currentDomain}/api`,
+      `https://backend-${currentDomain}/api`,
+      // Try current domain with /api
+      `${window.location.origin}/api`,
+      // Hardcoded fallback (update this with actual backend URL when known)
+      'https://tellyousomeday-backend-xxxxx.ondigitalocean.app/api'
+    ];
+    
+    console.log('🌐 Potential API URLs:', potentialUrls);
+    return potentialUrls[0]; // Try the first one
+  }
+  
+  // Final fallback
   return 'http://localhost:5000/api';
 };
 
 const API_BASE_URL = getApiUrl();
 
-console.log('🔧 API Configuration:', {
-  VITE_API_URL: import.meta.env.VITE_API_URL,
-  API_BASE_URL: API_BASE_URL,
-  origin: window.location.origin,
-  hostname: window.location.hostname,
-  mode: import.meta.env.MODE
+console.log('🔧 Final API Configuration:', {
+  API_BASE_URL,
+  currentOrigin: window.location.origin,
+  currentHostname: window.location.hostname,
+  env: import.meta.env.MODE
 });
 
 // API Client
