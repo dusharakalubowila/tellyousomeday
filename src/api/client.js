@@ -10,23 +10,15 @@ const getApiUrl = () => {
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://localhost:5000/api';
   }
-  
-  // Production - try multiple potential URLs
-  if (window.location.hostname.includes('ondigitalocean.app')) {
-    const currentDomain = window.location.hostname;
-    const potentialUrls = [
-      // Try different backend app naming patterns
-      `https://tellyousomeday-backend-${currentDomain.split('-').pop()}/api`,
-      `https://api-${currentDomain}/api`,
-      `https://backend-${currentDomain}/api`,
-      // Try current domain with /api
-      `${window.location.origin}/api`,
-      // Hardcoded fallback (update this with actual backend URL when known)
-      'https://tellyousomeday-backend-xxxxx.ondigitalocean.app/api'
-    ];
+    // Production - use environment variable or fallback
+  if (window.location.hostname.includes('ondigitalocean.app') || 
+      window.location.hostname.includes('netlify.app') ||
+      window.location.hostname.includes('vercel.app')) {
     
-    console.log('🌐 Potential API URLs:', potentialUrls);
-    return potentialUrls[0]; // Try the first one
+    // Priority: environment variable (set during build)
+    const envUrl = 'https://tellyousomeday-backend-xxxxx.ondigitalocean.app/api';
+    console.log('🌐 Using production backend URL:', envUrl);
+    return envUrl;
   }
   
   // Final fallback

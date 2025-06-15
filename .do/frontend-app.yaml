@@ -1,0 +1,19 @@
+# Frontend-only configuration for TellYouSomeday
+# Use this after backend is deployed and working
+name: tellyousomeday-frontend
+static_sites:
+- name: frontend
+  source_dir: /
+  github:
+    repo: dusharakalubowila/tellyousomeday
+    branch: main
+  build_command: npm ci && npm run build
+  output_dir: dist
+  environment_slug: node-js
+  index_document: index.html
+  error_document: index.html
+  envs:
+  - key: VITE_API_URL
+    value: https://tellyousomeday-backend-xxxxx.ondigitalocean.app/api
+  - key: NODE_ENV
+    value: production
