@@ -12,8 +12,17 @@ static_sites:
   environment_slug: node-js
   index_document: index.html
   error_document: index.html
+  routes:
+  - path: /api/*
+    type: redirect
+    location: https://tellyousomeday-backend-xxxxx.ondigitalocean.app/api/
+    status_code: 301
   envs:
   - key: VITE_API_URL
     value: https://tellyousomeday-backend-xxxxx.ondigitalocean.app/api
   - key: NODE_ENV
     value: production
+  - key: VITE_APP_NAME
+    value: TellYouSomeday
+  - key: VITE_APP_VERSION
+    value: "1.0.0"

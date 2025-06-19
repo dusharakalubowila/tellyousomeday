@@ -12,6 +12,14 @@ dist
 dist-ssr
 *.local
 
+# Environment files (keep examples)
+.env
+backend/.env
+# Don't ignore deployment configs
+!.env.example
+!.env.production
+!backend/.env.example
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -22,3 +30,12 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# OS generated files
+Thumbs.db
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db

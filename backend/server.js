@@ -93,7 +93,11 @@ app.get('/', (req, res) => {
 // Scheduled job to send messages (runs every hour)
 cron.schedule('0 * * * *', () => {
   console.log('🕐 Running scheduled message check...');
-  sendScheduledMessages();
+  try {
+    sendScheduledMessages();
+  } catch (error) {
+    console.error('❌ Error in scheduled message service:', error.message);
+  }
 });
 
 // Error handling middleware

@@ -9,16 +9,21 @@ const getApiUrl = () => {
   // Development
   if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
     return 'http://localhost:5000/api';
-  }
-    // Production - use environment variable or fallback
+  }  // Production - use environment variable or fallback
   if (window.location.hostname.includes('ondigitalocean.app') || 
       window.location.hostname.includes('netlify.app') ||
       window.location.hostname.includes('vercel.app')) {
     
-    // Priority: environment variable (set during build)
-    const envUrl = 'https://tellyousomeday-backend-xxxxx.ondigitalocean.app/api';
-    console.log('🌐 Using production backend URL:', envUrl);
-    return envUrl;
+    // Use environment variable if available
+    const envUrl = import.meta.env.VITE_API_URL;
+    if (envUrl) {
+      console.log('🌐 Using environment backend URL:', envUrl);
+      return envUrl;
+    }
+    
+    // Fallback for production deployment
+    console.log('⚠️ No VITE_API_URL found, using localhost fallback');
+    return 'http://localhost:5000/api';
   }
   
   // Final fallback
