@@ -81,11 +81,9 @@ const messageSchema = new mongoose.Schema({
   lastViewedAt: {
     type: Date
   },
-  
-  // Search & Discovery
+    // Search & Discovery
   searchableText: {
-    type: String, // Lowercase version for search
-    index: true
+    type: String // Lowercase version for search
   },
   
   // Timestamps
