@@ -1,1 +1,1 @@
-web: npx serve -s dist -l $PORT --single
+web: node backend/server-with-static.js

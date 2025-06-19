@@ -44,10 +44,11 @@ const WriteMessage = () => {
         isPrivate: messageData.isPrivate,
         passwordHint: messageData.passwordHint,
         password: messageData.password
-      };
-
-      // Send to API
+      };      // Send to API
+      console.log('📤 Sending to API:', requestData);
       const response = await messageAPI.createMessage(requestData);
+      
+      console.log('📥 API Response:', response);
       
       if (response.success) {
         alert('🎉 Your message has been saved successfully!\n\nIt will be delivered according to your settings. Thank you for sharing your heart with TellYouSomeday. ❤️');
@@ -65,10 +66,30 @@ const WriteMessage = () => {
           passwordHint: '',
           password: ''
         });
-      }
-    } catch (error) {
+      } else {
+        console.warn('⚠️ API returned success=false:', response);
+        throw new Error(response.message || response.error || 'Unknown API error');
+      }} catch (error) {
       console.error('Error saving message:', error);
-      alert('❌ Sorry, there was an error saving your message.\n\nPlease try again. If the problem persists, please contact support.');
+      
+      // Show the actual error message from the API
+      let errorMessage = '❌ Sorry, there was an error saving your message.';
+      
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      
+      if (errorMsg) {
+        // If it's a specific API error, show it
+        if (errorMsg.includes('Backend API not deployed') || 
+            errorMsg.includes('Cannot connect to backend')) {
+          errorMessage = '🔧 Backend service is not available. Please try again in a few minutes.';
+        } else if (errorMsg.includes('validation')) {
+          errorMessage = '📝 Please check that all required fields are filled correctly.';
+        } else {
+          errorMessage = `❌ Error: ${errorMsg}`;
+        }
+      }
+      
+      alert(`${errorMessage}\n\nIf the problem persists, please contact support.\n\nTechnical details: ${errorMsg || 'Unknown error'}`);
     }
   }
   const updateMessageData = (field: string, value: string | boolean) => {
