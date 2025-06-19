@@ -43,8 +43,7 @@ console.log('🔧 Final API Configuration:', {
 class APIClient {
   constructor(baseURL = API_BASE_URL) {
     this.baseURL = baseURL;
-  }
-  async request(endpoint, options = {}) {
+  }  async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;
     
     console.log('🌐 API Request:', {
@@ -71,14 +70,22 @@ class APIClient {
       console.log('📡 API Response:', {
         status: response.status,
         statusText: response.statusText,
-        url: response.url
+        url: response.url,
+        contentType: response.headers.get('content-type')
       });
+      
+      // Check if response is HTML (means backend not deployed)
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('text/html')) {
+        console.error('🚨 BACKEND NOT DEPLOYED: Received HTML instead of JSON');
+        throw new Error('Backend API not deployed. Please deploy the backend service first.');
+      }
       
       const data = await response.json();
 
       if (!response.ok) {
         console.error('❌ API Error Response:', data);
-        throw new Error(data.error || `HTTP error! status: ${response.status}`);
+        throw new Error(data.error || data.message || `HTTP error! status: ${response.status}`);
       }
 
       console.log('✅ API Success:', data);
@@ -90,7 +97,15 @@ class APIClient {
         endpoint,
         baseURL: this.baseURL
       });
-      throw error;
+      
+      // Provide helpful error messages
+      if (error.message.includes('Backend API not deployed')) {
+        throw new Error('Backend service is not deployed yet. Please deploy the backend first.');
+      } else if (error.message.includes('fetch')) {
+        throw new Error('Cannot connect to backend API. Please check if the backend is running.');
+      } else {
+        throw error;
+      }
     }
   }
 
