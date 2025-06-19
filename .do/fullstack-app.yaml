@@ -1,0 +1,41 @@
+# Single App Configuration - Frontend + Backend Together
+# This serves both React frontend and Express API from one DigitalOcean app
+name: tellyousomeday-fullstack
+services:
+- name: web
+  source_dir: /
+  github:
+    repo: dusharakalubowila/tellyousomeday
+    branch: main
+    deploy_on_push: true
+  build_command: |
+    # Install frontend dependencies and build
+    npm ci
+    npm run build
+    # Install backend dependencies
+    cd backend
+    npm ci --only=production
+    cd ..
+  run_command: node backend/server-with-static.js
+  environment_slug: node-js
+  instance_count: 1
+  instance_size_slug: basic-xxs
+  http_port: 8080
+  health_check:
+    http_path: /api/health
+    initial_delay_seconds: 30
+    period_seconds: 10
+    timeout_seconds: 5
+    failure_threshold: 3
+    success_threshold: 1
+  envs:
+  - key: NODE_ENV
+    value: production
+  - key: PORT
+    value: "8080"
+  - key: MONGODB_URI
+    value: mongodb+srv://tellyousomeday-admin:Dkk%40320909@tellyousomeday-cluster.8j0bf4b.mongodb.net/tellyousomeday?retryWrites=true&w=majority&appName=tellyousomeday-cluster
+  - key: JWT_SECRET
+    value: tellyousomeday-super-secret-jwt-key-production-2025
+  - key: FRONTEND_URL
+    value: "*"
