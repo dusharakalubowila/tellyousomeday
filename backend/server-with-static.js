@@ -90,28 +90,45 @@ app.get('/api/test', (req, res) => {
 });
 
 // Serve static files from React build
-const distPath = path.join(__dirname, '..', 'dist');
-const alternativeDistPath = path.join(process.cwd(), 'dist');
+// Try multiple possible paths for the dist folder
+const possibleDistPaths = [
+  path.join(__dirname, 'public'),               // backend/public (copied during build)
+  path.join(__dirname, '..', 'dist'),           // ../dist from backend folder
+  path.join(process.cwd(), 'dist'),             // dist from current working directory
+  path.join('/workspace', 'dist'),              // Absolute path for DigitalOcean
+  path.join(__dirname, '..', '..', 'dist'),     // ../../dist (if nested deeper)
+  'dist'                                        // Relative dist
+];
 
-// Check which dist path exists
-let staticPath = distPath;
-try {
-  // Try the default path first
-  if (!fs.existsSync(distPath)) {
-    console.log('⚠️ Default dist path not found:', distPath);
-    console.log('🔍 Trying alternative path:', alternativeDistPath);
-    if (fs.existsSync(alternativeDistPath)) {
-      staticPath = alternativeDistPath;
-      console.log('✅ Using alternative dist path');
+let staticPath = null;
+
+console.log('🔍 Searching for dist folder in multiple locations...');
+for (const distPath of possibleDistPaths) {
+  console.log(`   Checking: ${distPath}`);
+  try {
+    if (fs.existsSync(distPath)) {
+      const indexPath = path.join(distPath, 'index.html');
+      if (fs.existsSync(indexPath)) {
+        staticPath = distPath;
+        console.log(`✅ Found valid dist folder: ${staticPath}`);
+        break;
+      } else {
+        console.log(`   - Folder exists but no index.html`);
+      }
     } else {
-      console.log('❌ No dist folder found!');
+      console.log(`   - Path does not exist`);
     }
+  } catch (error) {
+    console.log(`   - Error checking path: ${error.message}`);
   }
-} catch (error) {
-  console.log('⚠️ Error checking dist paths:', error.message);
 }
 
-console.log('📂 Serving static files from:', staticPath);
+if (!staticPath) {
+  console.log('❌ No valid dist folder found! Creating fallback response.');
+  staticPath = possibleDistPaths[0]; // Use first path as fallback
+}
+
+console.log('📂 Using static path:', staticPath);
 app.use(express.static(staticPath));
 
 // Catch all handler: send back React's index.html file for any non-API routes
