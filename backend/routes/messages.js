@@ -205,7 +205,7 @@ router.get('/search/:senderName', searchLimiter, validateSearchQuery, async (req
 });
 
 // Get a specific message (with password verification if needed)
-router.post('/read/:messageId', readMessageLimiter, validatePassword, async (req, res) => {
+router.post('/read/:messageId', async (req, res) => {
   try {
     const { messageId } = req.params;
     const { password } = req.body;
