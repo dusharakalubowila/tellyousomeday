@@ -2,7 +2,7 @@ User-agent: *
 Allow: /
 
 # Sitemap
-Sitemap: https://tellyousomeday-5r77f.ondigitalocean.app/sitemap.xml
+Sitemap: https://www.tellyousomeday.com/sitemap.xml
 
 # Disallow sensitive areas (none for this app)
 # Allow all content to be indexed for maximum visibility

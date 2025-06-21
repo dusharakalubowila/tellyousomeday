@@ -1,25 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://tellyousomeday-5r77f.ondigitalocean.app/</loc>
+    <loc>https://www.tellyousomeday.com/</loc>
     <lastmod>2025-06-22</lastmod>
     <priority>1.0</priority>
     <changefreq>daily</changefreq>
   </url>
   <url>
-    <loc>https://tellyousomeday-5r77f.ondigitalocean.app/write</loc>
+    <loc>https://www.tellyousomeday.com/write</loc>
     <lastmod>2025-06-22</lastmod>
     <priority>0.8</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://tellyousomeday-5r77f.ondigitalocean.app/search</loc>
+    <loc>https://www.tellyousomeday.com/search</loc>
     <lastmod>2025-06-22</lastmod>
     <priority>0.8</priority>
     <changefreq>weekly</changefreq>
   </url>
   <url>
-    <loc>https://tellyousomeday-5r77f.ondigitalocean.app/about</loc>
+    <loc>https://www.tellyousomeday.com/about</loc>
     <lastmod>2025-06-22</lastmod>
     <priority>0.6</priority>
     <changefreq>monthly</changefreq>

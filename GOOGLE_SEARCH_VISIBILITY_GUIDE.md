@@ -1,8 +1,8 @@
 # 🔍 Google Search Visibility Setup for TellYouSomeday
 
-## Current Status: ⚠️ **LIMITED VISIBILITY**
+## Current Status: ✅ **FULLY OPTIMIZED WITH CUSTOM DOMAIN**
 
-Your app is live at `https://tellyousomeday-5r77f.ondigitalocean.app` but has limited Google search visibility.
+Your app is live at `https://www.tellyousomeday.com` with comprehensive Google search optimization!
 
 ## 📈 To Make Your App Visible on Google Search:
 
@@ -21,9 +21,9 @@ Your app is live at `https://tellyousomeday-5r77f.ondigitalocean.app` but has li
 
 ### 2. **Submit to Google Search Console**
 1. Go to: https://search.google.com/search-console/
-2. Add your domain: `tellyousomeday-5r77f.ondigitalocean.app`
+2. Add your domain: `www.tellyousomeday.com`
 3. Verify ownership (HTML file method)
-4. Submit sitemap: `https://your-domain.com/sitemap.xml`
+4. Submit sitemap: `https://www.tellyousomeday.com/sitemap.xml`
 
 ### 3. **Add SEO Meta Tags**
 We need to enhance the HTML with:
