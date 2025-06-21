@@ -47,13 +47,17 @@ const Home = () => {
           <div className="logo">
             <Heart className="logo-icon" />
             <h1>TellYouSomeday</h1>
-          </div>
-          <nav className="nav">
-            <Link to="/search" className="nav-link">
+          </div>          <nav className="nav">
+            <Link to="/write" className="nav-link nav-primary">
+              <PenTool size={18} />
+              Write Message
+            </Link>
+            <Link to="/search" className="nav-link nav-secondary">
               <Search size={18} />
               Find Messages
             </Link>
-            <Link to="/about" className="nav-link">
+            <Link to="/about" className="nav-link nav-tertiary">
+              <MessageCircle size={18} />
               About
             </Link>
           </nav>
