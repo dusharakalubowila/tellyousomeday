@@ -92,10 +92,10 @@ app.get('/api/test', (req, res) => {
 // Serve static files from React build
 // Try multiple possible paths for the dist folder
 const possibleDistPaths = [
+  '/workspace/dist',                            // Absolute workspace path (DigitalOcean)
   path.join(__dirname, 'public'),               // backend/public (copied during build)
   path.join(__dirname, '..', 'dist'),           // ../dist from backend folder
   path.join(process.cwd(), 'dist'),             // dist from current working directory
-  path.join('/workspace', 'dist'),              // Absolute path for DigitalOcean
   path.join(__dirname, '..', '..', 'dist'),     // ../../dist (if nested deeper)
   'dist'                                        // Relative dist
 ];
