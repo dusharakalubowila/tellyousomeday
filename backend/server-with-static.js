@@ -4,6 +4,7 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import cron from 'node-cron';
 import path from 'path';
+import fs from 'fs';
 import { fileURLToPath } from 'url';
 import messageRoutes from './routes/messages.js';
 import { sendScheduledMessages } from './services/emailService.js';
@@ -90,8 +91,28 @@ app.get('/api/test', (req, res) => {
 
 // Serve static files from React build
 const distPath = path.join(__dirname, '..', 'dist');
-console.log('📂 Serving static files from:', distPath);
-app.use(express.static(distPath));
+const alternativeDistPath = path.join(process.cwd(), 'dist');
+
+// Check which dist path exists
+let staticPath = distPath;
+try {
+  // Try the default path first
+  if (!fs.existsSync(distPath)) {
+    console.log('⚠️ Default dist path not found:', distPath);
+    console.log('🔍 Trying alternative path:', alternativeDistPath);
+    if (fs.existsSync(alternativeDistPath)) {
+      staticPath = alternativeDistPath;
+      console.log('✅ Using alternative dist path');
+    } else {
+      console.log('❌ No dist folder found!');
+    }
+  }
+} catch (error) {
+  console.log('⚠️ Error checking dist paths:', error.message);
+}
+
+console.log('📂 Serving static files from:', staticPath);
+app.use(express.static(staticPath));
 
 // Catch all handler: send back React's index.html file for any non-API routes
 app.get('*', (req, res) => {
@@ -100,9 +121,28 @@ app.get('*', (req, res) => {
     return res.status(404).json({ error: 'API route not found' });
   }
   
-  const indexPath = path.join(distPath, 'index.html');
+  const indexPath = path.join(staticPath, 'index.html');
   console.log('📄 Serving index.html for route:', req.path);
-  res.sendFile(indexPath);
+  console.log('📂 Index file path:', indexPath);
+    // Check if index.html exists
+  try {
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      console.log('❌ index.html not found at:', indexPath);
+      res.status(500).json({ 
+        error: 'Frontend not built', 
+        message: 'React app build files not found',
+        path: indexPath 
+      });
+    }
+  } catch (error) {
+    console.error('❌ Error serving index.html:', error.message);
+    res.status(500).json({ 
+      error: 'File serving error', 
+      message: error.message 
+    });
+  }
 });
 
 // Scheduled job to send messages (runs every hour)
@@ -131,7 +171,7 @@ app.listen(PORT, () => {
   console.log(`🌐 CORS enabled for: ${process.env.FRONTEND_URL || 'all origins'}`);
   console.log(`🔗 MongoDB URI: ${process.env.MONGODB_URI ? 'Set' : 'Not set'}`);
   console.log(`🔑 JWT Secret: ${process.env.JWT_SECRET ? 'Set' : 'Not set'}`);
-  console.log(`📂 Serving React app from: ${distPath}`);
+  console.log(`📂 Serving React app from: ${staticPath}`);
   
   // Test MongoDB connection
   if (mongoose.connection.readyState === 1) {
