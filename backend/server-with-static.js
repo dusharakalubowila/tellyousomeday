@@ -5,9 +5,13 @@ import dotenv from 'dotenv';
 import cron from 'node-cron';
 import path from 'path';
 import fs from 'fs';
+import helmet from 'helmet';
+import mongoSanitize from 'express-mongo-sanitize';
 import { fileURLToPath } from 'url';
 import messageRoutes from './routes/messages.js';
-import { sendScheduledMessages } from './services/emailService.js';
+import { sendScheduledMessages, testEmailConfig } from './services/emailService.js';
+import { generalLimiter } from './middleware/rateLimiter.js';
+import { logger, requestLogger, logError } from './utils/logger.js';
 
 // ES modules compatibility
 const __filename = fileURLToPath(import.meta.url);
@@ -18,74 +22,210 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// Request logging
+app.use(requestLogger);
+
+// Security Middleware
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", "https:"],
+      scriptSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'"],
+      fontSrc: ["'self'", "https:"],
+      objectSrc: ["'none'"],
+      mediaSrc: ["'self'"],
+      frameSrc: ["'none'"],
+    },
+  },
+  crossOriginEmbedderPolicy: false
+}));
+
+// Sanitize MongoDB queries
+app.use(mongoSanitize());
+
+// General rate limiting
+app.use('/api', generalLimiter);
+
+// CORS configuration
 app.use(cors({
-  origin: true, // Allow all origins for now
+  origin: process.env.NODE_ENV === 'production' 
+    ? ['https://tellyousomeday.com', 'https://www.tellyousomeday.com']
+    : true, // Allow all origins in development
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
-app.use(express.json({ limit: '10mb' }));
+
+// Body parsing middleware
+app.use(express.json({ 
+  limit: '10mb',
+  verify: (req, res, buf) => {
+    try {
+      JSON.parse(buf);
+    } catch (e) {
+      res.status(400).json({ error: 'Invalid JSON' });
+      throw new Error('Invalid JSON');
+    }
+  }
+}));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Database connection
-console.log('🔄 Connecting to MongoDB...');
+logger.info('🔄 Connecting to MongoDB...');
 mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/tellyousomeday')
 .then(() => {
-  console.log('✅ Connected to MongoDB');
-  console.log(`📊 Database: ${mongoose.connection.db.databaseName}`);
+  logger.info('✅ Connected to MongoDB', {
+    database: mongoose.connection.db.databaseName,
+    host: mongoose.connection.host,
+    port: mongoose.connection.port
+  });
 })
 .catch((err) => {
-  console.error('❌ MongoDB connection error:', err);
-  console.error('🔍 Connection URI:', process.env.MONGODB_URI ? 'Set' : 'Not set');
+  logger.error('❌ MongoDB connection error', {
+    error: err.message,
+    uri: process.env.MONGODB_URI ? 'configured' : 'not configured'
+  });
 });
 
 // API Routes (must be before static files)
 app.use('/api/messages', messageRoutes);
 
-// Health check
+// Enhanced health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
-    // Test database connection
-    const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
-    const dbName = mongoose.connection.db ? mongoose.connection.db.databaseName : 'unknown';
-    
-    res.status(200).json({ 
-      status: 'OK', 
-      message: 'TellYouSomeday API is running',
+    const healthCheck = {
+      status: 'healthy',
       timestamp: new Date().toISOString(),
       uptime: process.uptime(),
+      version: process.env.npm_package_version || '1.0.0',
       environment: process.env.NODE_ENV || 'development',
-      database: {
-        status: dbStatus,
-        name: dbName
+      services: {}
+    };
+
+    // Check database connection
+    try {
+      const dbStatus = mongoose.connection.readyState;
+      const dbStates = ['disconnected', 'connected', 'connecting', 'disconnecting'];
+      
+      healthCheck.services.database = {
+        status: dbStatus === 1 ? 'healthy' : 'unhealthy',
+        state: dbStates[dbStatus] || 'unknown',
+        host: mongoose.connection.host,
+        name: mongoose.connection.name
+      };
+
+      if (dbStatus === 1) {
+        // Test database query
+        await mongoose.connection.db.admin().ping();
+        healthCheck.services.database.ping = 'successful';
+      }
+    } catch (dbError) {
+      healthCheck.services.database = {
+        status: 'unhealthy',
+        error: dbError.message
+      };
+      healthCheck.status = 'degraded';
+    }
+
+    // Check email service
+    try {
+      const emailTest = await testEmailConfig();
+      healthCheck.services.email = {
+        status: emailTest.success ? 'healthy' : 'unhealthy',
+        configured: !!process.env.SMTP_USER,
+        message: emailTest.message
+      };
+    } catch (emailError) {
+      healthCheck.services.email = {
+        status: 'unhealthy',
+        configured: !!process.env.SMTP_USER,
+        error: emailError.message
+      };
+    }
+
+    // Memory usage
+    const memUsage = process.memoryUsage();
+    healthCheck.system = {
+      memory: {
+        used: `${Math.round(memUsage.heapUsed / 1024 / 1024)}MB`,
+        total: `${Math.round(memUsage.heapTotal / 1024 / 1024)}MB`,
+        external: `${Math.round(memUsage.external / 1024 / 1024)}MB`
       },
-      port: PORT
-    });
+      uptime: `${Math.floor(process.uptime())}s`,
+      nodeVersion: process.version
+    };
+
+    // Set appropriate status code
+    const statusCode = healthCheck.status === 'healthy' ? 200 : 503;
+    
+    res.status(statusCode).json(healthCheck);
+
   } catch (error) {
-    res.status(500).json({
-      status: 'ERROR',
-      message: 'Health check failed',
+    logger.error('Health check failed', { error: error.message });
+    res.status(503).json({
+      status: 'unhealthy',
+      timestamp: new Date().toISOString(),
       error: error.message
     });
   }
 });
 
-// Root health check (backup)
-app.get('/health', (req, res) => {
-  res.status(200).json({ 
-    status: 'OK', 
-    message: 'TellYouSomeday API is running' 
-  });
+// System information endpoint (for admin/monitoring)
+app.get('/api/system/info', async (req, res) => {
+  try {
+    const systemInfo = {
+      server: {
+        uptime: process.uptime(),
+        memory: process.memoryUsage(),
+        cpu: process.cpuUsage(),
+        platform: process.platform,
+        nodeVersion: process.version,
+        environment: process.env.NODE_ENV
+      },
+      database: {
+        status: mongoose.connection.readyState,
+        host: mongoose.connection.host,
+        name: mongoose.connection.name,
+        collections: Object.keys(mongoose.connection.collections)
+      },
+      configuration: {
+        port: PORT,
+        corsEnabled: true,
+        emailConfigured: !!process.env.SMTP_USER,
+        mongodbConfigured: !!process.env.MONGODB_URI
+      }
+    };
+
+    res.json({
+      success: true,
+      data: systemInfo,
+      timestamp: new Date().toISOString()
+    });
+
+  } catch (error) {
+    logger.error('System info request failed', { error: error.message });
+    res.status(500).json({
+      error: 'Failed to get system information',
+      message: error.message
+    });
+  }
 });
 
 // Simple test endpoint
 app.get('/api/test', (req, res) => {
-  res.json({ 
-    message: 'Backend API is working!',
+  logger.info('Test endpoint accessed', { 
+    ip: req.ip,
+    userAgent: req.get('User-Agent')
+  });
+  
+  res.json({
+    message: 'TellYouSomeday API is working! 🚀',
     timestamp: new Date().toISOString(),
-    cors: 'enabled',
-    mode: 'fullstack'
+    environment: process.env.NODE_ENV || 'development',
+    version: '2.0.0'
   });
 });
 
@@ -162,32 +302,81 @@ app.get('*', (req, res) => {
   }
 });
 
-// Scheduled job to send messages (runs every hour)
-cron.schedule('0 * * * *', () => {
-  console.log('🕐 Running scheduled message check...');
+// Enhanced scheduled message processing with logging
+cron.schedule('*/5 * * * *', async () => {
+  logger.info('🕐 Running scheduled message check...');
+  
   try {
-    sendScheduledMessages();
+    const result = await sendScheduledMessages();
+    
+    if (result.total > 0) {
+      logger.info('📧 Scheduled messages processing completed', {
+        total: result.total,
+        processed: result.processed,
+        errors: result.errors
+      });
+    }
   } catch (error) {
-    console.error('❌ Error in scheduled message service:', error.message);
+    logger.error('❌ Error in scheduled message cron job', {
+      error: error.message,
+      stack: error.stack
+    });
   }
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ 
-    error: 'Something went wrong!',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
+// Global error handling middleware
+app.use((error, req, res, next) => {
+  logError(error, req);
+  
+  // Don't leak error details in production
+  const isDevelopment = process.env.NODE_ENV !== 'production';
+  
+  res.status(error.status || 500).json({
+    error: 'Internal server error',
+    message: isDevelopment ? error.message : 'Something went wrong',
+    ...(isDevelopment && { stack: error.stack }),
+    timestamp: new Date().toISOString()
+  });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  // Don't log 404s for static assets
+  if (!req.originalUrl.includes('/api/')) {
+    return res.status(404).sendFile(path.join(staticPath, 'index.html'));
+  }
+  
+  logger.warn('404 API endpoint not found', {
+    method: req.method,
+    url: req.originalUrl,
+    ip: req.ip
+  });
+  
+  res.status(404).json({
+    error: 'Endpoint not found',
+    message: `Cannot ${req.method} ${req.originalUrl}`,
+    timestamp: new Date().toISOString()
   });
 });
 
 app.listen(PORT, () => {
+  logger.info('🚀 TellYouSomeday Full-Stack App started successfully', {
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development',
+    staticPath,
+    corsOrigins: process.env.NODE_ENV === 'production' 
+      ? ['https://tellyousomeday.com', 'https://www.tellyousomeday.com']
+      : 'all origins',
+    mongodbUri: process.env.MONGODB_URI ? 'configured' : 'using default',
+    emailService: process.env.SMTP_USER ? 'configured' : 'not configured'
+  });
+  
   console.log(`🚀 TellYouSomeday Full-Stack App running on port ${PORT}`);
   console.log(`📱 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🏥 Health check available at: /api/health`);
-  console.log(`🌐 CORS enabled for: ${process.env.FRONTEND_URL || 'all origins'}`);
-  console.log(`🔗 MongoDB URI: ${process.env.MONGODB_URI ? 'Set' : 'Not set'}`);
-  console.log(`🔑 JWT Secret: ${process.env.JWT_SECRET ? 'Set' : 'Not set'}`);
+  console.log(`🌐 CORS enabled for: ${process.env.NODE_ENV === 'production' ? 'production domains' : 'all origins'}`);
+  console.log(`🔗 MongoDB URI: ${process.env.MONGODB_URI ? 'configured' : 'using default'}`);
+  console.log(`🔑 JWT Secret: ${process.env.JWT_SECRET ? 'configured' : 'not configured'}`);
   console.log(`📂 Serving React app from: ${staticPath}`);
   
   // Test MongoDB connection
@@ -202,11 +391,15 @@ app.listen(PORT, () => {
     console.log(`✅ Server fully initialized and ready for health checks`);
     console.log(`📍 Available endpoints:`);
     console.log(`   GET / - React App (Frontend)`);
-    console.log(`   GET /health - Health check`);
-    console.log(`   GET /api/health - Main health check`);
+    console.log(`   GET /api/health - Comprehensive health check`);
+    console.log(`   GET /api/system/info - System information`);
     console.log(`   GET /api/test - Test endpoint`);
+    console.log(`   GET /api/messages/trending - Trending searches`);
+    console.log(`   GET /api/messages/search/:name - Search messages`);
+    console.log(`   POST /api/messages/advanced-search - Advanced search`);
     console.log(`   POST /api/messages - Create message`);
-    console.log(`   GET /api/messages - Get messages`);
+    console.log(`   POST /api/messages/read/:id - Read message`);
+    console.log(`   GET /api/messages/stats - Enhanced statistics`);
     console.log(`   GET /* - React App (SPA routing)`);
   }, 2000);
 });

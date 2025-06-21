@@ -131,17 +131,20 @@ const WriteMessage = () => {
             <div className={`progress-step ${currentStep >= 4 ? 'active' : ''}`}>4</div>
           </div>
 
-          {currentStep === 1 && (
-            <div className="step-content">
-              <h2>Who is this message for?</h2>
-              <p>Choose who should receive your heartfelt message</p>
+          {currentStep === 1 && (            <div className="step-content">
+              <div className="step-header-content">
+                <h2>Who is this message for?</h2>
+                <p>Choose who should receive your heartfelt message</p>
+              </div>
               
               <div className="recipient-options">
                 <button 
                   className={`recipient-option ${messageData.recipientType === 'person' ? 'selected' : ''}`}
                   onClick={() => updateMessageData('recipientType', 'person')}
                 >
-                  <User size={32} />
+                  <div className="option-icon">
+                    <User size={32} />
+                  </div>
                   <h3>A specific person</h3>
                   <p>Someone special who deserves to hear your words</p>
                 </button>
@@ -150,7 +153,9 @@ const WriteMessage = () => {
                   className={`recipient-option ${messageData.recipientType === 'family' ? 'selected' : ''}`}
                   onClick={() => updateMessageData('recipientType', 'family')}
                 >
-                  <Users size={32} />
+                  <div className="option-icon">
+                    <Users size={32} />
+                  </div>
                   <h3>My family</h3>
                   <p>For those who share your blood and your heart</p>
                 </button>
@@ -159,7 +164,9 @@ const WriteMessage = () => {
                   className={`recipient-option ${messageData.recipientType === 'world' ? 'selected' : ''}`}
                   onClick={() => updateMessageData('recipientType', 'world')}
                 >
-                  <Globe size={32} />
+                  <div className="option-icon">
+                    <Globe size={32} />
+                  </div>
                   <h3>The world</h3>
                   <p>A message for anyone who might find it meaningful</p>
                 </button>
@@ -167,27 +174,29 @@ const WriteMessage = () => {
 
               {messageData.recipientType && (
                 <div className="recipient-details">
-                  <div className="form-group">
-                    <label>Your name</label>
+                  <div className="form-group floating-label">
                     <input
                       type="text"
                       placeholder="Your full name"
                       value={messageData.senderName}
                       onChange={(e) => updateMessageData('senderName', e.target.value)}
                       className="form-input"
+                      id="senderName"
                     />
+                    <label htmlFor="senderName" className="form-label">Your name</label>
                   </div>
                   
                   {messageData.recipientType === 'person' && (
-                    <div className="form-group">
-                      <label>Recipient's name</label>
+                    <div className="form-group floating-label">
                       <input
                         type="text"
                         placeholder="Who is this message for?"
                         value={messageData.recipientName}
                         onChange={(e) => updateMessageData('recipientName', e.target.value)}
                         className="form-input"
+                        id="recipientName"
                       />
+                      <label htmlFor="recipientName" className="form-label">Recipient's name</label>
                     </div>
                   )}
                 </div>
@@ -197,9 +206,9 @@ const WriteMessage = () => {
                 <button 
                   onClick={handleNext}
                   disabled={!messageData.recipientType || !messageData.senderName}
-                  className="btn btn-primary"
-                >
-                  Continue
+                  className="btn btn-primary btn-large"                >
+                  Continue to Message
+                  <Send size={20} />
                 </button>
               </div>
             </div>
