@@ -201,13 +201,14 @@ P.S. Remember that sunset at the beach? That was one of the happiest moments of 
                   onClick={handleSearch}
                   className="search-btn"
                   disabled={isSearching}
+                  aria-label="Search for messages"
                 >
                   {isSearching ? (
-                    <div className="loading-spinner"></div>
+                    <div className="loading-spinner" aria-label="Searching..."></div>
                   ) : (
                     <>
                       <SearchIcon size={20} />
-                      Search
+                      <span>Search</span>
                     </>
                   )}
                 </button>
@@ -227,6 +228,7 @@ P.S. Remember that sunset at the beach? That was one of the happiest moments of 
                         setSearchQuery(suggestion)
                         setShowSuggestions(false)
                       }}
+                      aria-label={`Search for ${suggestion}`}
                     >
                       <SearchIcon size={16} />
                       {suggestion}
@@ -250,14 +252,16 @@ P.S. Remember that sunset at the beach? That was one of the happiest moments of 
                     key={key}
                     className={`filter-btn ${filterType === key ? 'active' : ''}`}
                     onClick={() => setFilterType(key)}
+                    aria-label={`Filter ${label.toLowerCase()}`}
+                    aria-pressed={filterType === key}
                   >
                     <Icon size={16} />
-                    {label}
+                    <span>{label}</span>
                   </button>
                 ))}
               </div>
             </div>
-          </div>          {searchResults.length > 0 && (
+          </div>{searchResults.length > 0 && (
             <div className="search-results">
               <div className="results-header">
                 <h3>{searchResults.length} message(s) found from "{searchQuery}"</h3>
@@ -271,8 +275,7 @@ P.S. Remember that sunset at the beach? That was one of the happiest moments of 
                     Latest: {new Date(searchResults[0]?.createdAt || '').toLocaleDateString()}
                   </span>
                 </div>
-              </div>
-              <div className="messages-grid">
+              </div>              <div className="messages-grid">
                 {searchResults.map((message) => (
                   <div key={message.id} className="message-card">
                     <div className="message-header">
@@ -281,11 +284,11 @@ P.S. Remember that sunset at the beach? That was one of the happiest moments of 
                         <p>To: {message.recipientName || 'The World'}</p>
                         <span className="message-type">
                           {getMessageIcon(message.recipientType)}
-                          {getMessageTypeLabel(message.recipientType)}
+                          <span>{getMessageTypeLabel(message.recipientType)}</span>
                         </span>
                       </div>
                       {message.isPrivate && (
-                        <div className="lock-indicator">
+                        <div className="lock-indicator" title="This message is private">
                           <Lock size={16} />
                         </div>
                       )}
@@ -306,43 +309,67 @@ P.S. Remember that sunset at the beach? That was one of the happiest moments of 
                             placeholder="Enter your answer"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && handleUnlockMessage(message)}
                             className="password-input"
+                            aria-label="Enter password to unlock message"
                           />
                           <button 
                             onClick={() => handleUnlockMessage(message)}
                             className="unlock-btn"
+                            aria-label="Unlock message"
+                            disabled={!password.trim()}
                           >
-                            Unlock
+                            <Lock size={18} />
+                            <span>Unlock Message</span>
                           </button>
                         </div>
                         {passwordError && (
-                          <div className="error-message">{passwordError}</div>
+                          <div className="error-message" role="alert">{passwordError}</div>
                         )}
-                      </div>                    ) : (
-                      <button 
-                        onClick={() => setSelectedMessage({
-                          ...message,
-                          message: message.previewText + '\n\n[This would be the full message content...]'
-                        })}
-                        className="read-btn"
-                      >
-                        Read Message
-                      </button>
+                      </div>
+                    ) : (
+                      <div className="unlock-section">
+                        <button 
+                          onClick={() => setSelectedMessage({
+                            ...message,
+                            message: message.previewText + '\n\n[This would be the full message content...]'
+                          })}
+                          className="read-btn"
+                          aria-label={`Read message from ${message.senderName}`}
+                        >
+                          <Eye size={18} />
+                          <span>Read Full Message</span>
+                        </button>
+                      </div>
                     )}
                     
                     <div className="message-meta">
                       <span>Created: {new Date(message.createdAt).toLocaleDateString()}</span>
+                      {message.views !== undefined && (
+                        <span> • {message.views} view{message.views !== 1 ? 's' : ''}</span>
+                      )}
                     </div>
                   </div>
                 ))}
               </div>
             </div>
-          )}
-
-          {searchQuery && searchResults.length === 0 && !isSearching && (
+          )}          {searchQuery && searchResults.length === 0 && !isSearching && (
             <div className="no-results">
-              <p>No messages found from "{searchQuery}"</p>
-              <p>They might not have written anything yet, or their messages might be scheduled for later.</p>
+              <div className="no-results-icon">
+                <SearchIcon size={48} />
+              </div>
+              <h3>No messages found</h3>
+              <p>We couldn't find any messages from "<strong>{searchQuery}</strong>"</p>
+              <p>They might not have written anything yet, or their messages might be scheduled for later delivery.</p>
+              <div className="no-results-actions">
+                <button 
+                  onClick={() => setSearchQuery('')}
+                  className="clear-search-btn"
+                >
+                  <ArrowLeft size={16} />
+                  <span>Try Another Search</span>
+                </button>
+              </div>
             </div>
           )}
         </div>
