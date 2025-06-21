@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart, Search, PenTool, Clock, Lock, Users, Star, Sparkles, MessageCircle } from 'lucide-react'
+import GoogleAuthButton from '../components/GoogleAuthButton'
 
 const Home = () => {
   const [isHovered, setIsHovered] = useState<string | null>(null)
@@ -48,6 +49,15 @@ const Home = () => {
             <Heart className="logo-icon" />
             <h1>TellYouSomeday</h1>
           </div>          <nav className="nav">
+            <GoogleAuthButton 
+              onSuccess={(userInfo) => {
+                console.log('User signed in:', userInfo.name);
+                // You can update your app state here
+              }}
+              onError={(error) => {
+                console.error('Google sign-in failed:', error);
+              }}
+            />
             <Link to="/write" className="nav-link nav-primary">
               <PenTool size={18} />
               Write Message
