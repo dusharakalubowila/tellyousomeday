@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { Search as SearchIcon, Heart, Lock, Users, Globe, User, ArrowLeft } from 'lucide-react'
+import { Search as SearchIcon, Heart, Lock, Users, Globe, User, ArrowLeft, Clock, Eye } from 'lucide-react'
 import type { Message } from '../api/client.d.ts'
 
 const Search = () => {
@@ -10,6 +10,9 @@ const Search = () => {
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null)
   const [password, setPassword] = useState('')
   const [passwordError, setPasswordError] = useState('')
+  const [filterType, setFilterType] = useState<string>('all')
+  const [searchSuggestions] = useState(['family messages', 'love letters', 'graduation messages', 'birthday wishes'])
+  const [showSuggestions, setShowSuggestions] = useState(false)
   // Mock data for demonstration
   const mockMessages: Message[] = [
     {
@@ -177,33 +180,99 @@ P.S. Remember that sunset at the beach? That was one of the happiest moments of 
           <div className="search-header">
             <h2>Find Messages Left for You</h2>
             <p>Search by someone's name to see if they left you a message</p>
-          </div>
+          </div>          <div className="search-box">
+            <div className="search-input-wrapper">
+              <div className="search-input-group">
+                <SearchIcon size={20} className="search-icon" />
+                <input
+                  type="text"
+                  placeholder="Enter someone's name (e.g., Dushara Kalubowila)"
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value)
+                    setShowSuggestions(e.target.value.length > 0)
+                  }}
+                  onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                  onFocus={() => setShowSuggestions(searchQuery.length > 0)}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  className="search-input"
+                />
+                <button 
+                  onClick={handleSearch}
+                  className="search-btn"
+                  disabled={isSearching}
+                >
+                  {isSearching ? (
+                    <div className="loading-spinner"></div>
+                  ) : (
+                    <>
+                      <SearchIcon size={20} />
+                      Search
+                    </>
+                  )}
+                </button>
+              </div>
 
-          <div className="search-box">
-            <div className="search-input-group">
-              <input
-                type="text"
-                placeholder="Enter someone's name (e.g., Dushara Kalubowila)"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
-                className="search-input"
-              />
-              <button 
-                onClick={handleSearch}
-                className="search-btn"
-                disabled={isSearching}
-              >
-                <SearchIcon size={20} />
-                {isSearching ? 'Searching...' : 'Search'}
-              </button>
+              {/* Search Suggestions */}
+              {showSuggestions && searchSuggestions.length > 0 && (
+                <div className="search-suggestions">
+                  <div className="suggestions-header">
+                    <span>Popular searches:</span>
+                  </div>
+                  {searchSuggestions.map((suggestion, index) => (
+                    <button
+                      key={index}
+                      className="suggestion-item"
+                      onClick={() => {
+                        setSearchQuery(suggestion)
+                        setShowSuggestions(false)
+                      }}
+                    >
+                      <SearchIcon size={16} />
+                      {suggestion}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
-          </div>
 
-          {searchResults.length > 0 && (
+            {/* Filter Options */}
+            <div className="search-filters">
+              <span className="filter-label">Filter by type:</span>
+              <div className="filter-buttons">
+                {[
+                  { key: 'all', label: 'All Messages', icon: Heart },
+                  { key: 'person', label: 'Personal', icon: User },
+                  { key: 'family', label: 'Family', icon: Users },
+                  { key: 'world', label: 'Public', icon: Globe }
+                ].map(({ key, label, icon: Icon }) => (
+                  <button
+                    key={key}
+                    className={`filter-btn ${filterType === key ? 'active' : ''}`}
+                    onClick={() => setFilterType(key)}
+                  >
+                    <Icon size={16} />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>          {searchResults.length > 0 && (
             <div className="search-results">
-              <h3>{searchResults.length} message(s) found from "{searchQuery}"</h3>
-                <div className="messages-grid">
+              <div className="results-header">
+                <h3>{searchResults.length} message(s) found from "{searchQuery}"</h3>
+                <div className="results-stats">
+                  <span className="stat">
+                    <Eye size={16} />
+                    {searchResults.reduce((acc, msg) => acc + (msg.views || 0), 0)} total views
+                  </span>
+                  <span className="stat">
+                    <Clock size={16} />
+                    Latest: {new Date(searchResults[0]?.createdAt || '').toLocaleDateString()}
+                  </span>
+                </div>
+              </div>
+              <div className="messages-grid">
                 {searchResults.map((message) => (
                   <div key={message.id} className="message-card">
                     <div className="message-header">

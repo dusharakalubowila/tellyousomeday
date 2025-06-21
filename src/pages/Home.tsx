@@ -1,9 +1,43 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-import { Heart, Search, PenTool, Clock, Lock, Users } from 'lucide-react'
+import { Heart, Search, PenTool, Clock, Lock, Users, Star, Sparkles, MessageCircle } from 'lucide-react'
 
 const Home = () => {
   const [isHovered, setIsHovered] = useState<string | null>(null)
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
+  const [currentTestimonial, setCurrentTestimonial] = useState(0)
+
+  // Mouse tracking for interactive effects
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      setMousePosition({ x: e.clientX, y: e.clientY })
+    }
+    window.addEventListener('mousemove', handleMouseMove)
+    return () => window.removeEventListener('mousemove', handleMouseMove)
+  }, [])
+
+  // Testimonial rotation
+  const testimonials = [
+    { text: "I never told you how proud I am...", author: "To my daughter" },
+    { text: "When you're ready to hear this...", author: "For the future" },
+    { text: "For your wedding day ♥", author: "Mom's message" },
+    { text: "Thank you for believing in me", author: "To my mentor" },
+    { text: "I hope you find your happiness", author: "To an old friend" }
+  ]
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentTestimonial((prev) => (prev + 1) % testimonials.length)
+    }, 4000)
+    return () => clearInterval(interval)
+  }, [])
+
+  const handleButtonClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const ripple = document.createElement('span')
+    ripple.className = 'btn-ripple'
+    e.currentTarget.appendChild(ripple)
+    setTimeout(() => ripple.remove(), 600)
+  }
 
   return (
     <div className="home">
@@ -24,53 +58,107 @@ const Home = () => {
             </Link>
           </nav>
         </div>
-      </header>
-
-      {/* Hero Section */}
+      </header>      {/* Hero Section */}
       <section className="hero">
+        {/* Interactive background elements */}
+        <div className="hero-bg-effects">
+          <div className="floating-particles">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className={`particle particle-${i + 1}`}>
+                <Star size={16} />
+              </div>
+            ))}
+          </div>
+          <div 
+            className="mouse-glow" 
+            style={{
+              left: `${mousePosition.x}px`,
+              top: `${mousePosition.y}px`
+            }}
+          />
+        </div>
+
         <div className="container">
           <div className="hero-content">
+            <div className="hero-badge">
+              <Sparkles size={16} />
+              <span>Share Your Heart</span>
+              <Sparkles size={16} />
+            </div>
+            
             <h2 className="hero-title">
               Some things are too important<br />
               <span className="gradient-text">to be left unsaid</span>
             </h2>
+            
             <p className="hero-subtitle">
               Leave a message. Deliver it when the time is right.<br />
               For the words that matter most, even when we can't say them now.
             </p>
+            
+            <div className="hero-stats">
+              <div className="stat">
+                <MessageCircle size={20} />
+                <span>1000+ Messages</span>
+              </div>
+              <div className="stat">
+                <Heart size={20} />
+                <span>Hearts Connected</span>
+              </div>
+              <div className="stat">
+                <Lock size={20} />
+                <span>Safely Stored</span>
+              </div>
+            </div>
+            
             <div className="hero-actions">
               <Link 
                 to="/write" 
-                className="btn btn-primary"
+                className="btn btn-primary btn-large"
                 onMouseEnter={() => setIsHovered('write')}
                 onMouseLeave={() => setIsHovered(null)}
+                onClick={handleButtonClick}
               >
                 <PenTool size={20} />
                 Write Your Message
-                {isHovered === 'write' && <span className="btn-ripple"></span>}
+                {isHovered === 'write' && <span className="btn-shimmer"></span>}
               </Link>
               <Link 
                 to="/search" 
-                className="btn btn-secondary"
+                className="btn btn-secondary btn-large"
                 onMouseEnter={() => setIsHovered('search')}
                 onMouseLeave={() => setIsHovered(null)}
+                onClick={handleButtonClick}
               >
                 <Search size={20} />
                 Search for Messages
-                {isHovered === 'search' && <span className="btn-ripple"></span>}
               </Link>
             </div>
           </div>
-          <div className="hero-visual">
+            <div className="hero-visual">
+            {/* Floating Messages - positioned relative to full hero */}
             <div className="floating-messages">
-              <div className="message-bubble message-1">
-                <p>"I never told you how proud I am..."</p>
-              </div>
-              <div className="message-bubble message-2">
-                <p>"When you're ready to hear this..."</p>
-              </div>
-              <div className="message-bubble message-3">
-                <p>"For your wedding day ♥"</p>
+              {testimonials.slice(0, 3).map((testimonial, index) => (
+                <div key={index} className={`message-bubble message-${index + 1}`}>
+                  <p>"{testimonial.text}"</p>
+                </div>
+              ))}
+            </div>
+            
+            <div className="message-showcase">
+              <div className="message-preview">
+                <div className="message-header">
+                  <div className="message-avatar">
+                    <Heart size={16} />
+                  </div>
+                  <div className="message-info">
+                    <span className="message-author">{testimonials[currentTestimonial].author}</span>
+                    <span className="message-time">For someday...</span>
+                  </div>
+                </div>
+                <div className="message-content">
+                  <p>"{testimonials[currentTestimonial].text}"</p>
+                </div>
               </div>
             </div>
           </div>
