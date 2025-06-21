@@ -14,14 +14,13 @@ const Search = () => {
   const [searchSuggestions] = useState(['family messages', 'love letters', 'graduation messages', 'birthday wishes'])
   const [showSuggestions, setShowSuggestions] = useState(false)
   // Mock data for demonstration
-  const mockMessages: Message[] = [
-    {
+  const mockMessages: Message[] = [    {
       id: '1',
       senderName: 'Dushara Kalubowila',
       recipientType: 'person',
       recipientName: 'Thathsara',
       isPrivate: true,
-      passwordHint: 'What did we call the first beach we went to together?',
+      passwordHint: 'Thathsara... You won\'t see this yet — just wait for the day.',
       previewText: 'There are things I never got to tell you...',
       deliveryType: 'immediate',
       views: 0,
