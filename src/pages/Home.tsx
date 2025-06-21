@@ -2,11 +2,23 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart, Search, PenTool, Clock, Lock, Users, Star, Sparkles, MessageCircle } from 'lucide-react'
 import GoogleAuthButton from '../components/GoogleAuthButton'
+import analytics, { usePageTracking, useTimeTracking } from '../utils/analytics'
 
 const Home = () => {
   const [isHovered, setIsHovered] = useState<string | null>(null)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
   const [currentTestimonial, setCurrentTestimonial] = useState(0)
+
+  // Analytics tracking
+  usePageTracking('Home');
+  const trackTimeSpent = useTimeTracking('Home');
+
+  // Clean up time tracking on unmount
+  useEffect(() => {
+    return () => {
+      trackTimeSpent();
+    };
+  }, [trackTimeSpent])
 
   // Mouse tracking for interactive effects
   useEffect(() => {
@@ -32,12 +44,15 @@ const Home = () => {
     }, 4000)
     return () => clearInterval(interval)
   }, [])
-
-  const handleButtonClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+  const handleButtonClick = (e: React.MouseEvent<HTMLAnchorElement>, buttonName: string = 'unknown') => {
+    // Visual ripple effect
     const ripple = document.createElement('span')
     ripple.className = 'btn-ripple'
     e.currentTarget.appendChild(ripple)
     setTimeout(() => ripple.remove(), 600)
+    
+    // Analytics tracking
+    analytics.buttonClicked(buttonName, 'hero_section');
   }
 
   return (
@@ -124,14 +139,13 @@ const Home = () => {
                 <span>Safely Stored</span>
               </div>
             </div>
-            
-            <div className="hero-actions">
+              <div className="hero-actions">
               <Link 
                 to="/write" 
                 className="btn btn-primary btn-large"
                 onMouseEnter={() => setIsHovered('write')}
                 onMouseLeave={() => setIsHovered(null)}
-                onClick={handleButtonClick}
+                onClick={(e) => handleButtonClick(e, 'write_message_hero')}
               >
                 <PenTool size={20} />
                 Write Your Message
@@ -142,7 +156,7 @@ const Home = () => {
                 className="btn btn-secondary btn-large"
                 onMouseEnter={() => setIsHovered('search')}
                 onMouseLeave={() => setIsHovered(null)}
-                onClick={handleButtonClick}
+                onClick={(e) => handleButtonClick(e, 'search_messages_hero')}
               >
                 <Search size={20} />
                 Search for Messages

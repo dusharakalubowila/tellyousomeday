@@ -1,6 +1,8 @@
 import { useState } from 'react'
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Heart, User, Users, Globe, Lock, Send, ArrowLeft } from 'lucide-react'
+import analytics, { usePageTracking, useTimeTracking } from '../utils/analytics'
 
 const WriteMessage = () => {
   const [currentStep, setCurrentStep] = useState(1)
@@ -15,10 +17,24 @@ const WriteMessage = () => {
     passwordHint: '',
     password: ''
   })
-
+  // Analytics tracking
+  usePageTracking('WriteMessage');
+  const trackTimeSpent = useTimeTracking('WriteMessage');
+  
+  // Call trackTimeSpent when component unmounts
+  useEffect(() => {
+    return () => {
+      trackTimeSpent();
+    };
+  }, [trackTimeSpent]);
   const handleNext = () => {
+    // Track progression through steps
+    if (currentStep === 1 && messageData.recipientType) {
+      analytics.messageStarted(messageData.recipientType);
+    }
     setCurrentStep(prev => prev + 1)
   }
+  
   const handleBack = () => {
     setCurrentStep(prev => prev - 1)
   }
@@ -51,6 +67,14 @@ const WriteMessage = () => {
       console.log('📥 API Response:', response);
       
       if (response.success) {
+        // Track successful message creation
+        analytics.messageCompleted(
+          messageData.recipientType, 
+          messageData.isPrivate, 
+          messageData.deliveryType
+        );
+        analytics.conversion('message_created', 1);
+        
         alert('🎉 Your message has been saved successfully!\n\nIt will be delivered according to your settings. Thank you for sharing your heart with TellYouSomeday. ❤️');
         
         // Reset form or redirect
@@ -65,11 +89,11 @@ const WriteMessage = () => {
           isPrivate: false,
           passwordHint: '',
           password: ''
-        });
-      } else {
+        });      } else {
         console.warn('⚠️ API returned success=false:', response);
         throw new Error(response.message || response.error || 'Unknown API error');
-      }} catch (error) {
+      }
+    } catch (error) {
       console.error('Error saving message:', error);
       
       // Show the actual error message from the API

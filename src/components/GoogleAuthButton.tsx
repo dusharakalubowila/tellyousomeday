@@ -1,8 +1,9 @@
 import { GoogleOAuthProvider, GoogleLogin } from '@react-oauth/google';
 import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import analytics from '../utils/analytics';
 
-const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '795120485568-51shvqf84fu506jsvf4nc70b0ijdvepd.apps.googleusercontent.com';
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || 'your_google_client_id_here';
 
 interface GoogleAuthButtonProps {
   onSuccess?: (userInfo: any) => void;
@@ -28,9 +29,11 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({ onSuccess, onError 
         picture: userInfo.picture,
         googleToken: credentialResponse.credential
       };
-      
-      // Use the auth context to login
+        // Use the auth context to login
       login(userData);
+      
+      // Track successful login
+      analytics.userSignIn('google');
       
       if (onSuccess) {
         onSuccess(userInfo);
@@ -52,8 +55,8 @@ const GoogleAuthButton: React.FC<GoogleAuthButtonProps> = ({ onSuccess, onError 
       onError(new Error('Google login failed'));
     }
   };
-
   const handleLogout = () => {
+    analytics.userSignOut();
     logout();
   };
 

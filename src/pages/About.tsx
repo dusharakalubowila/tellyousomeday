@@ -13,8 +13,11 @@ import {
   Send,
   Eye
 } from 'lucide-react'
+import { usePageTracking } from '../utils/analytics'
 
 const About = () => {
+  // Track page view
+  usePageTracking('About')
   return (
     <div className="about-page">
       <header className="header">

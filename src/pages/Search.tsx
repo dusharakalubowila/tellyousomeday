@@ -2,8 +2,12 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Search as SearchIcon, Heart, Lock, Users, Globe, User, ArrowLeft, Clock, Eye } from 'lucide-react'
 import type { Message } from '../api/client.d.ts'
+import analytics, { usePageTracking } from '../utils/analytics'
 
 const Search = () => {
+  // Track page view
+  usePageTracking('Search')
+
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Message[]>([])
   const [isSearching, setIsSearching] = useState(false)
@@ -42,8 +46,7 @@ const Search = () => {
     {
       id: '3',
       senderName: 'Dushara Kalubowila',
-      recipientType: 'world',
-      isPrivate: false,
+      recipientType: 'world',      isPrivate: false,
       previewText: 'If you\'re reading this, maybe you knew me, maybe you didn\'t...',
       deliveryType: 'immediate',
       views: 12,
@@ -64,8 +67,11 @@ const Search = () => {
       )
       setSearchResults(results)
       setIsSearching(false)
+      
+      // Track search completion      analytics.searchPerformed(searchQuery, results.length)
     }, 1000)
   }
+  
   const handleUnlockMessage = (message: Message) => {
     if (password.toLowerCase().trim() === 'sunset cove') { // Mock correct answer
       const messageWithFullText = {
@@ -87,10 +93,17 @@ Dushara
 
 P.S. Remember that sunset at the beach? That was one of the happiest moments of my life.`
       }
+      
+      // Track successful message unlock
+      analytics.messageUnlocked()
+      analytics.messageFound(message.recipientType, message.isPrivate)
+      
       setSelectedMessage(messageWithFullText)
       setPassword('')
       setPasswordError('')
     } else {
+      // Track failed unlock attempt
+      analytics.messageUnlockFailed(1)
       setPasswordError('That\'s not quite right. Think about our special memories together.')
     }
   }
@@ -125,9 +138,11 @@ P.S. Remember that sunset at the beach? That was one of the happiest moments of 
         </header>
 
         <div className="message-viewer">
-          <div className="container">
-            <button 
-              onClick={() => setSelectedMessage(null)}
+          <div className="container">            <button 
+              onClick={() => {
+                analytics.buttonClicked('back_to_search', 'message_viewer')
+                setSelectedMessage(null)
+              }}
               className="back-btn"
             >
               <ArrowLeft size={20} />
@@ -222,8 +237,8 @@ P.S. Remember that sunset at the beach? That was one of the happiest moments of 
                   {searchSuggestions.map((suggestion, index) => (
                     <button
                       key={index}
-                      className="suggestion-item"
-                      onClick={() => {
+                      className="suggestion-item"                      onClick={() => {
+                        analytics.buttonClicked('search_suggestion', 'search_page')
                         setSearchQuery(suggestion)
                         setShowSuggestions(false)
                       }}
@@ -250,7 +265,10 @@ P.S. Remember that sunset at the beach? That was one of the happiest moments of 
                   <button
                     key={key}
                     className={`filter-btn ${filterType === key ? 'active' : ''}`}
-                    onClick={() => setFilterType(key)}
+                    onClick={() => {
+                      setFilterType(key)
+                      analytics.buttonClicked(`filter_${key}`, 'search_page')
+                    }}
                     aria-label={`Filter ${label.toLowerCase()}`}
                     aria-pressed={filterType === key}
                   >
@@ -327,12 +345,17 @@ P.S. Remember that sunset at the beach? That was one of the happiest moments of 
                         )}
                       </div>
                     ) : (
-                      <div className="unlock-section">
-                        <button 
-                          onClick={() => setSelectedMessage({
-                            ...message,
-                            message: message.previewText + '\n\n[This would be the full message content...]'
-                          })}
+                      <div className="unlock-section">                        <button 
+                          onClick={() => {
+                            // Track reading public message
+                            analytics.messageFound(message.recipientType, message.isPrivate)
+                            analytics.buttonClicked('read_message', 'search_results')
+                            
+                            setSelectedMessage({
+                              ...message,
+                              message: message.previewText + '\n\n[This would be the full message content...]'
+                            })
+                          }}
                           className="read-btn"
                           aria-label={`Read message from ${message.senderName}`}
                         >
