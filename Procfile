@@ -1,1 +1,1 @@
-web: npm start
+web: CI=false npm run build && npm start
